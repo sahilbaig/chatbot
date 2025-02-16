@@ -1,5 +1,9 @@
+import asyncio
+import numpy as np
 from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
 
+# Load the model
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
 cv_data = [
@@ -10,25 +14,17 @@ cv_data = [
     "I am proficient in data analysis and visualization using Pandas and Matplotlib."
 ]
 
-
+# Precompute embeddings
 cv_embeddings = model.encode(cv_data)
-import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
 
-def get_response(query):
-    # Encode the user query
-    query_embedding = model.encode([query])
+async def get_response(query):
+    # Encode the query asynchronously
+    query_embedding = await asyncio.to_thread(model.encode, [query])
     
-    # Compute cosine similarity between the query and CV data
-    similarities = cosine_similarity(query_embedding, cv_embeddings)
+    # Compute cosine similarity asynchronously
+    similarities = await asyncio.to_thread(cosine_similarity, query_embedding, cv_embeddings)
     
-    # Find the index of the most similar sentence
-    best_match_index = np.argmax(similarities)
+    # Find the best match asynchronously
+    best_match_index = await asyncio.to_thread(np.argmax, similarities)
     
-    # Return the best matching sentence from the CV data
     return cv_data[best_match_index]
-
-queries = ["Hello"]
-for query in queries:
-    response = get_response(query)
-    print(f"Query: {query}\nResponse: {response}\n")
